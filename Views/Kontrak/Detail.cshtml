@@ -1,0 +1,184 @@
+﻿@model SoalDeveloper.Models.Kontrak
+
+@{
+    ViewData["Title"] = "Detail Jadwal Kontrak";
+}
+
+<h2>Jadwal Angsuran - @Model.ClientName</h2>
+
+<table class="table table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Kontrak No</th>
+            <th>Angsuran Ke</th>
+            <th>Jumlah</th>
+            <th>Jatuh Tempo</th>
+            <th class="status-col">Status</th>
+            <th class="aksi-col">Aksi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var jadwal in Model.JadwalAngsurans)
+        {
+            <tr data-kontrak="@jadwal.KontrakNo" data-angsuran="@jadwal.AngsuranKe">
+                <td>@jadwal.KontrakNo</td>
+                <td>@jadwal.AngsuranKe</td>
+                <td>@jadwal.AngsuranPerBulan.ToString("N0")</td>
+                <td>@jadwal.TanggalJatuhTempo.ToString("yyyy-MM-dd")</td>
+                <td class="status-col">@jadwal.StatusPembayaran</td>
+                <td class="aksi-col">
+                    @if (jadwal.StatusPembayaran != "Lunas")
+                    {
+                        <button class="btn btn-success btn-sm"
+                                onclick="openBayarModal('@jadwal.KontrakNo',
+                                                                '@jadwal.AngsuranKe',
+                                                                '@jadwal.AngsuranPerBulan',
+                                                                '@jadwal.SisaTagihan')">
+                            💰 Bayar
+                        </button>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Kembali</a>
+
+<!-- Modal Bayar -->
+<div class="modal fade" id="bayarModal" tabindex="-1" aria-labelledby="bayarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="bayarModalLabel">Form Pembayaran</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formBayar">
+                    <div class="mb-2">
+                        <label>No Kontrak</label>
+                        <input type="text" id="kontrakNo" class="form-control" readonly />
+                    </div>
+                    <div class="mb-2">
+                        <label>Angsuran Ke</label>
+                        <input type="text" id="angsuranKe" class="form-control" readonly />
+                    </div>
+                    <div class="mb-2">
+                        <label>Tanggal Pembayaran</label>
+                        <input type="date" id="tglBayar" class="form-control"
+                               value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Total Angsuran</label>
+                        <input type="text" id="totalAngsuran" class="form-control" readonly />
+                    </div>
+                    <div class="mb-2">
+                        <label>Total Bayar</label>
+                        <input type="number" id="totalBayar" class="form-control" oninput="hitungSisa()" />
+                    </div>
+                    <div class="mb-2">
+                        <label>Sisa Tagihan</label>
+                        <input type="text" id="sisaTagihan" class="form-control" readonly />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button class="btn btn-success" onclick="submitBayar()">💾 Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let sisaAwal = 0;
+
+        function openBayarModal(kontrakNo, angsuranKe, totalAngsuran, sisa) {
+            document.getElementById("kontrakNo").value = kontrakNo;
+            document.getElementById("angsuranKe").value = angsuranKe;
+            document.getElementById("totalAngsuran").value = parseInt(totalAngsuran).toLocaleString();
+            document.getElementById("sisaTagihan").value = parseInt(sisa).toLocaleString();
+            sisaAwal = parseInt(sisa);
+
+            // reset input bayar
+            document.getElementById("totalBayar").value = "";
+            var bayarModal = new bootstrap.Modal(document.getElementById("bayarModal"));
+            bayarModal.show();
+        }
+
+        function hitungSisa() {
+            let bayar = parseInt(document.getElementById("totalBayar").value) || 0;
+
+            // ✅ validasi: total bayar tidak boleh lebih dari sisaAwal
+            if (bayar > sisaAwal) {
+                alert("Total bayar tidak boleh lebih besar dari sisa tagihan!");
+                document.getElementById("totalBayar").value = sisaAwal; // otomatis set max
+                bayar = sisaAwal;
+            }
+
+            let sisa = sisaAwal - bayar;
+            document.getElementById("sisaTagihan").value = sisa.toLocaleString();
+        }
+
+        function submitBayar() {
+            let totalBayarInput = parseFloat(document.getElementById("totalBayar").value) || 0;
+
+            // ✅ validasi sebelum submit
+            if (totalBayarInput > sisaAwal) {
+                alert("Total bayar tidak boleh lebih besar dari sisa tagihan!");
+                return;
+            }
+
+            let data = {
+                KontrakNo: document.getElementById("kontrakNo").value,
+                AngsuranKe: parseInt(document.getElementById("angsuranKe").value),
+                TanggalBayar: document.getElementById("tglBayar").value,
+                TotalBayar: totalBayarInput
+            };
+
+            fetch('/Kontrak/Bayar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(res => {
+                if (!res.ok) return res.json().then(err => { throw new Error(err.message || "Gagal menyimpan pembayaran"); });
+                return res.json();
+            })
+            .then(result => {
+                alert("Pembayaran berhasil! Status: " + result.status);
+
+                // update tampilan tabel sesuai kontrak & angsuran
+                let row = document.querySelector(
+                    `tr[data-kontrak='${data.KontrakNo}'][data-angsuran='${data.AngsuranKe}']`
+                );
+                if (row) {
+                    row.querySelector(".status-col").innerText = result.status;
+                    if (result.status === "Lunas") {
+                        row.querySelector(".aksi-col").innerHTML = "";
+                    } else {
+                        row.querySelector(".aksi-col").innerHTML = `
+                            <button class="btn btn-success btn-sm"
+                                onclick="openBayarModal('${data.KontrakNo}', '${data.AngsuranKe}',
+                                                        '${document.getElementById("totalAngsuran").value.replace(/,/g,"")}',
+                                                        '${result.sisa}')">
+                                💰 Bayar
+                            </button>`;
+                    }
+                }
+
+                bootstrap.Modal.getInstance(document.getElementById("bayarModal")).hide();
+            })
+            .catch(err => {
+                console.error(err);
+                alert(err.message || "Terjadi kesalahan saat menyimpan pembayaran.");
+            });
+        }
+    </script>
+}
+
+}

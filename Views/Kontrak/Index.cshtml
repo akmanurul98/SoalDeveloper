@@ -1,0 +1,41 @@
+﻿@model IEnumerable<SoalDeveloper.Models.Kontrak>
+
+@{
+    ViewData["Title"] = "Daftar Kontrak";
+}
+
+<h2>Daftar Kontrak</h2>
+
+<a class="btn btn-success mb-3" asp-action="Create">+ Buat Kontrak Baru</a>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Kontrak No</th>
+            <th>Client Name</th>
+            <th>OTR</th>
+            <th>DP</th>
+            <th>Jangka Waktu</th>
+            <th>Angsuran Perbulan</th>
+            <th>Jadwal Angsuran</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var kontrak in Model)
+        {
+            <tr>
+                <td>@kontrak.KontrakNo</td>
+                <td>@kontrak.ClientName</td>
+                <td>@kontrak.OTR.ToString("N0")</td>
+                <td>@kontrak.DP.ToString("N0")</td>
+                <td>@kontrak.JangkaWaktu bulan</td>
+                <td>@kontrak.Angsuran.ToString("N0")</td>
+                <td>
+                    <a class="btn btn-primary btn-sm" asp-action="Detail" asp-route-id="@kontrak.KontrakNo">
+                        Lihat Jadwal
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

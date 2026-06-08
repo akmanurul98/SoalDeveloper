@@ -38,8 +38,13 @@ public class KontrakController : Controller
     {
         decimal dp = dp_percen * otr / 100;
         decimal pokokUtang = otr - dp;
-        decimal bunga = (jangkaWaktu <= 12) ? 0.12m :
-                        (jangkaWaktu <= 24) ? 0.14m : 0.165m;
+        //decimal bunga = (jangkaWaktu <= 12) ? 0.12m :
+        //                (jangkaWaktu <= 24) ? 0.14m : 0.165m;
+
+        decimal bunga = _context.MasterTenors
+                            .Where(x => x.JangkaWaktu == jangkaWaktu)
+                            .Select(x => x.Bunga)
+                            .FirstOrDefault();
 
         decimal angsuran = (pokokUtang + (pokokUtang * bunga)) / jangkaWaktu;
 
@@ -135,6 +140,30 @@ public class KontrakController : Controller
     }
 
 
+    public IActionResult MasterBunga()
+    {
+        var data = _context.MasterTenors
+                           .OrderBy(x => x.JangkaWaktu)
+                           .ToList();
 
+        return View(data);
+    }
+
+    [HttpPost]
+    public IActionResult UpdateBunga(int id, decimal bunga)
+    {
+        var data = _context.MasterTenors
+                           .FirstOrDefault(x => x.Id == id);
+
+        if (data != null)
+        {
+            data.Bunga = bunga / 100;
+
+            _context.MasterTenors.Update(data);
+        }
+        _context.SaveChanges();
+
+        return RedirectToAction(nameof(MasterBunga));
+    }
 
 }

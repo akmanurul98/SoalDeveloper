@@ -1,0 +1,128 @@
+﻿@model IEnumerable<SoalDeveloper.Models.MasterTenor>
+
+@{
+    ViewData["Title"] = "Master Tenor";
+}
+
+<h2>Master Tenor & Bunga</h2>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Jangka Waktu (Bulan)</th>
+            <th>Bunga (%)</th>
+            <th>Tanggal Dibuat</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+
+                <td>@item.JangkaWaktu</td>
+
+                <td>
+                    @((item.Bunga * 100).ToString("N2")) %
+
+                    <a href="javascript:void(0)"
+                       onclick="editBunga(@item.Id,@item.JangkaWaktu,@item.Bunga)">
+                        <i class="bi bi-pencil-square"></i>
+                    </a>
+                </td>
+
+                <td>@item.CreatedDate.ToString("dd/MM/yyyy")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="modal fade"
+     id="editBungaModal"
+     tabindex="-1"
+     aria-labelledby="editBungaModalLabel"
+     aria-hidden="true">
+
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form asp-action="UpdateBunga" method="post">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editBungaModalLabel">
+                        Ubah Bunga
+                    </h5>
+
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal">
+                    </button>
+                </div>
+
+                <div class="modal-body">
+
+                    <input type="hidden"
+                           id="Id"
+                           name="Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Tenor
+                        </label>
+
+                        <input type="text"
+                               id="Tenor"
+                               class="form-control"
+                               readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Bunga
+                        </label>
+
+                        <input type="number"
+                               id="Bunga"
+                               name="Bunga"
+                               step="0.0001"
+                               class="form-control" />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit"
+                            class="btn btn-success">
+                        Simpan
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function editBunga(id, tenor, bunga) {
+
+        document.getElementById("Id").value = id;
+        document.getElementById("Tenor").value = tenor + " Bulan";
+        document.getElementById("Bunga").value = bunga;
+
+        var modal = new bootstrap.Modal(
+            document.getElementById('editBungaModal')
+        );
+
+        modal.show();
+    }
+</script>
+

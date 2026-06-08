@@ -11,6 +11,7 @@ namespace SoalDeveloper.Models
         public DbSet<Kontrak> Kontrak { get; set; }
         public DbSet<JadwalAngsuran> JadwalAngsuran { get; set; }
         public DbSet<Pembayaran> Pembayarans { get; set; }
+        public DbSet<MasterTenor> MasterTenors { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
